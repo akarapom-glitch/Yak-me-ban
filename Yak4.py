@@ -5,13 +5,14 @@ import psycopg2
 # ------------------------
 # 🔗 เชื่อมต่อ PostgreSQL
 # ------------------------
+import psycopg2
+
 def connect_db():
     return psycopg2.connect(
-        host="localhost",
-        database="postgres",
-        user="postgres",
-        password="12935"
+        "postgresql://postgres.nxevtwnbbeeacrypmpnx:akarapom24899@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
     )
+
+
 
 # ------------------------
 # 🎨 ตั้งค่า UI
@@ -134,6 +135,13 @@ if search:
 
             st.markdown("---")
 
+import streamlit as st
+
+try:
+    conn = connect_db()
+    st.success("✅ เชื่อมต่อ Supabase PostgreSQL สำเร็จ")
+except Exception as e:
+    st.error(f"❌ เชื่อมต่อไม่สำเร็จ: {e}")
 
 
 # streamlit run yak4.py เปิดเว็บ
