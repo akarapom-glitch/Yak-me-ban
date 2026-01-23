@@ -2,25 +2,25 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 
-# ------------------------
-# 🔗 เชื่อมต่อ PostgreSQL
-# ------------------------
-import psycopg2
 
+# ------------------------
+# 🔗 เชื่อมต่อ Supabase PostgreSQL
+# ------------------------
 def connect_db():
     return psycopg2.connect(
         "postgresql://postgres.nxevtwnbbeeacrypmpnx:akarapom24899@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
     )
 
-
-
 # ------------------------
 # 🎨 ตั้งค่า UI
 # ------------------------
-st.set_page_config(page_title="Yak Me Ban", layout="wide")
+st.set_page_config(
+    page_title="Yak Me Ban",
+    layout="wide"
+)
 
 # ------------------------
-# 🔝 แถบบนสุดแบบ DDproperty style
+# 🔝 แถบบน (Header)
 # ------------------------
 st.markdown(
     """
@@ -44,21 +44,12 @@ st.markdown(
         }
         .top-menu {
             display: flex;
-            gap: 40px;
+            gap: 30px;
             font-size: 16px;
         }
         .top-menu a {
             text-decoration: none;
             color: black;
-        }
-        .login-btn {
-            background-color: #e63946;
-            border: none;
-            padding: 6px 18px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
         }
     </style>
 
@@ -71,16 +62,12 @@ st.markdown(
             <a href="#">ค้นหาแบบบ้าน</a>
             <a href="#">คู่มือสร้างบ้าน</a>
             <a href="#">ติดต่อเรา</a>
-            <button class="login-btn">Login</button>
         </div>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-# ------------------------
-# 📋 ชื่อโปรแกรมหลัก
-# ------------------------
 st.markdown("## 📝 โปรแกรมค้นหาแบบบ้านตามความต้องการ")
 
 # ------------------------
@@ -89,19 +76,32 @@ st.markdown("## 📝 โปรแกรมค้นหาแบบบ้าน�
 col1, col2 = st.columns(2)
 
 with col1:
-    floor = st.radio("จำนวนชั้น", ["ทั้งหมด", "แบบบ้านชั้นเดียว", "แบบบ้านสองชั้น", "แบบบ้านสามชั้น"])
-    bedrooms = st.number_input("จำนวนห้องนอน ", min_value=1, max_value=10, step=1, value=2)
-    area = st.number_input("พื้นที่ใช้สอยขั้นต่ำ (ตร.ม.)", min_value=20, max_value=400, step=10, value=100)
+    floor = st.radio(
+        "จำนวนชั้น",
+        ["ทั้งหมด", "แบบบ้านชั้นเดียว", "แบบบ้านสองชั้น", "แบบบ้านสามชั้น"]
+    )
+    bedrooms = st.number_input(
+        "จำนวนห้องนอน",
+        min_value=1, max_value=10, step=1, value=2
+    )
+    area = st.number_input(
+        "พื้นที่ใช้สอยขั้นต่ำ (ตร.ม.)",
+        min_value=20, max_value=500, step=10, value=100
+    )
 
 with col2:
-    bathrooms = st.number_input("จำนวนห้องน้ำ ", min_value=1, max_value=12, step=1, value=1)
+    bathrooms = st.number_input(
+        "จำนวนห้องน้ำ",
+        min_value=1, max_value=10, step=1, value=1
+    )
 
 search = st.button("🔍 ค้นหาแบบบ้าน")
 
 # ------------------------
-# 🧠 Query ข้อมูลจากฐาน
+# 🧠 Query ข้อมูลจาก Supabase
 # ------------------------
 if search:
+
     with connect_db() as conn:
         query = """
             SELECT * FROM home_plan
@@ -114,34 +114,62 @@ if search:
         params = (floor, floor, bedrooms, bathrooms, area)
         df = pd.read_sql_query(query, conn, params=params)
 
-    st.markdown(f"### 📋 พบทั้งหมด {len(df)} แบบบ้าน")
+    try:
+        with connect_db() as conn:
+            query = """
+                SELECT *
+                FROM Public.home_plans
+                WHERE (%s = 'ทั้งหมด' OR floor = %s)
+                  AND bedroom = %s
+                  AND bathroom = %s
+                  AND area >= %s
+                ORDER BY area ASC
+            """
+            params = (
+                floor,
+                floor,
+                bedrooms,
+                bathrooms,
+                area
+            )
 
-    if len(df) == 0:
-        st.warning("ไม่พบแบบบ้านที่ตรงกับความต้องการ ลองเปลี่ยนเงื่อนไขดูนะครับ")
-    else:
-        for i, row in df.iterrows():
-            st.subheader(f"🏡 {row['name']}")
-            st.write(f"- ชั้น: {row['floor']}")
-            st.write(f"- ห้องนอน: {row['bedroom']} ห้อง")
-            st.write(f"- ห้องน้ำ: {row['bathroom']} ห้อง")
-            st.write(f"- พื้นที่ใช้สอย: {row['area']} ตร.ม.")
-            st.write(f"💰 ราคาโดยประมาณ: {row['price'] if pd.notna(row['price']) else '-'}")
-            
-            # ลิงก์ PDF แบบบ้าน
-            if pd.notna(row.get('pdf_link')) and row['pdf_link'].strip() != "":
-                st.markdown(f"[📄 ดาวน์โหลดแบบบ้าน (PDF)]({row['pdf_link']})")
+            df = pd.read_sql_query(query, conn, params=params)
 
-            
+        st.markdown(f"### 📋 พบทั้งหมด {len(df)} แบบบ้าน")
 
-            st.markdown("---")
+        if df.empty:
+            st.warning("ไม่พบแบบบ้านที่ตรงกับความต้องการ ลองเปลี่ยนเงื่อนไขดูนะครับ")
+        else:
+            for _, row in df.iterrows():
+                st.subheader(f"🏡 {row['name']}")
+                st.write(f"- ชั้น: {row['floor']}")
+                st.write(f"- ห้องนอน: {row['bedroom']} ห้อง")
+                st.write(f"- ห้องน้ำ: {row['bathroom']} ห้อง")
+                st.write(f"- พื้นที่ใช้สอย: {row['area']} ตร.ม.")
 
-import streamlit as st
+                if 'price' in row and pd.notna(row['price']):
+                    st.write(f"💰 ราคาโดยประมาณ: {row['price']}")
 
-try:
-    conn = connect_db()
-    st.success("✅ เชื่อมต่อ Supabase PostgreSQL สำเร็จ")
-except Exception as e:
-    st.error(f"❌ เชื่อมต่อไม่สำเร็จ: {e}")
+                if 'pdf_link' in row and pd.notna(row['pdf_link']) and row['pdf_link'] != "":
+                    st.markdown(f"[📄 ดาวน์โหลดแบบบ้าน (PDF)]({row['pdf_link']})")
+
+                st.markdown("---")
+
+    except Exception as e:
+        st.error(f"❌ เกิดข้อผิดพลาดในการดึงข้อมูล: {e}")
 
 
 # streamlit run yak4.py เปิดเว็บ
+
+# ------------------------
+# 🔌 ตรวจสอบการเชื่อมต่อ (Debug ใช้ตอนพรีเซนต์ได้)
+# ------------------------
+with st.expander("🔧 ตรวจสอบการเชื่อมต่อฐานข้อมูล"):
+    try:
+        conn = connect_db()
+        conn.close()
+        st.success("✅ เชื่อมต่อ Supabase PostgreSQL สำเร็จ")
+    except Exception as e:
+        st.error(f"❌ เชื่อมต่อไม่สำเร็จ: {e}")
+
+# streamlit run yak4.py
