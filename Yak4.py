@@ -104,7 +104,7 @@ search = st.button("🔍 ค้นหาแบบบ้าน")
 if search:
     with connect_db() as conn:
         query = """
-            SELECT * FROM home_plans
+            SELECT * FROM home_plan
             WHERE (%s = 'ทั้งหมด' OR floor = %s)
             AND bedroom = %s
             AND bathroom = %s
