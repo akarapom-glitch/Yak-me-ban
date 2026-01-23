@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 
-
 # ------------------------
 # 🔗 เชื่อมต่อ Supabase PostgreSQL
 # ------------------------
@@ -101,24 +100,11 @@ search = st.button("🔍 ค้นหาแบบบ้าน")
 # 🧠 Query ข้อมูลจาก Supabase
 # ------------------------
 if search:
-
-    with connect_db() as conn:
-        query = """
-            SELECT * FROM home_plan
-            WHERE (%s = 'ทั้งหมด' OR floor = %s)
-            AND bedroom = %s
-            AND bathroom = %s
-            AND area >= %s
-            ORDER BY bedroom DESC, area ASC
-        """
-        params = (floor, floor, bedrooms, bathrooms, area)
-        df = pd.read_sql_query(query, conn, params=params)
-
     try:
         with connect_db() as conn:
             query = """
                 SELECT *
-                FROM Public.home_plans
+                FROM home_plans
                 WHERE (%s = 'ทั้งหมด' OR floor = %s)
                   AND bedroom = %s
                   AND bathroom = %s
@@ -158,9 +144,6 @@ if search:
     except Exception as e:
         st.error(f"❌ เกิดข้อผิดพลาดในการดึงข้อมูล: {e}")
 
-
-# streamlit run yak4.py เปิดเว็บ
-
 # ------------------------
 # 🔌 ตรวจสอบการเชื่อมต่อ (Debug ใช้ตอนพรีเซนต์ได้)
 # ------------------------
@@ -172,4 +155,3 @@ with st.expander("🔧 ตรวจสอบการเชื่อมต่อ
     except Exception as e:
         st.error(f"❌ เชื่อมต่อไม่สำเร็จ: {e}")
 
-# streamlit run yak4.py
