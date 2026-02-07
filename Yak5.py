@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 
+
+
 # ------------------------
 # 🔗 เชื่อมต่อ PostgreSQL
 # ------------------------
@@ -157,3 +159,5 @@ if search:
                 st.markdown(f"[📄 ดาวน์โหลดแบบบ้าน (PDF)]({row['pdf_link']})")
 
             st.markdown("---")
+
+# streamlit run yak9.py
