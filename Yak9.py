@@ -4,6 +4,18 @@ import psycopg2
 import requests
 from io import BytesIO
 
+# ===== บังคับโหมดขาว (กัน Dark mode) =====
+st.markdown("""
+<style>
+:root {
+    color-scheme: light !important;
+}
+html, body, [data-testid="stAppViewContainer"] {
+    background-color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 
 # =====================================================
 # 🔗 เชื่อมต่อ Supabase PostgreSQL
