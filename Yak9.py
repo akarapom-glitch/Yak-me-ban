@@ -25,6 +25,16 @@ def connect_db():
         "postgresql://postgres.nxevtwnbbeeacrypmpnx:akarapom24899@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
     )
 
+@st.cache_data
+def load_image_from_url(url):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        return BytesIO(response.content)
+    except Exception:
+        return None
+
 # =====================================================
 # 🧠 Session State
 # =====================================================
@@ -42,6 +52,7 @@ if "show_compare" not in st.session_state:
 
 if "show_compare_ui" not in st.session_state:
     st.session_state.show_compare_ui = False
+
 
 # =====================================================
 # 🎨 ตั้งค่า UI
@@ -123,7 +134,7 @@ with left_col:
 # -------------------------
 with right_col:
     bedrooms = st.number_input(
-        "จำนวนห้องนอน",
+        "จำนวนห้องนอนขั้นต่ำ",
         min_value=1,
         max_value=10,
         value=2,
@@ -131,7 +142,7 @@ with right_col:
     )
 
     bathrooms = st.number_input(
-        "จำนวนห้องน้ำ",
+        "จำนวนห้องน้ำขั้นต่ำ",
         min_value=1,
         max_value=10,
         value=1,
@@ -173,8 +184,8 @@ if search:
                 SELECT *
                 FROM home_plans
                 WHERE (%s = 'ทั้งหมด' OR floor = %s)
-                  AND bedroom = %s
-                  AND bathroom = %s
+                  AND bedroom >= %s
+                  AND bathroom >= %s
                   AND area >= %s
                 ORDER BY area ASC
             """
@@ -205,7 +216,7 @@ if df is not None and not df.empty:
     if not st.session_state.show_compare_ui:
         if st.button("📊 เปิดโหมดเปรียบเทียบแบบบ้าน"):
             st.session_state.show_compare_ui = True
-            st.rerun()
+            
 
     if st.session_state.show_compare_ui:
 
@@ -234,22 +245,22 @@ if df is not None and not df.empty:
         with col_btn1:
             compare = st.button("📊 เปรียบเทียบ")
 
-        with col_btn2:
-            reset = st.button("🔄 Reset")
+        #with col_btn2:
+          #  reset = st.button("🔄 Reset")
 
-        with col_btn3:
+        with col_btn2:
             close = st.button("❌ ปิดโหมด")
 
-        if reset:
-            st.session_state.house_1 = "— กรุณาเลือก —"
-            st.session_state.house_2 = "— กรุณาเลือก —"
-            st.session_state.show_compare = False
-            st.rerun()
+        #if reset:
+            #st.session_state.house_1 = "— กรุณาเลือก —"
+            #st.session_state.house_2 = "— กรุณาเลือก —"
+            #st.session_state.show_compare = False
+            #st.rerun()
 
         if close:
             st.session_state.show_compare_ui = False
             st.session_state.show_compare = False
-            st.rerun()
+            
 
         if compare:
             st.session_state.show_compare = True
@@ -311,16 +322,7 @@ if df is not None and not df.empty:
             # =========================
             # 🖼️ แสดงรูปบ้าน (ถ้ามี)
             # =========================
-            def load_image_from_url(url):
-                try:
-                    headers = {
-                        "User-Agent": "Mozilla/5.0"
-                    }
-                    response = requests.get(url, headers=headers, timeout=10)
-                    response.raise_for_status()
-                    return BytesIO(response.content)
-                except Exception:
-                    return None
+            
 
             img = load_image_from_url(row.get("image_link"))
             if img:
